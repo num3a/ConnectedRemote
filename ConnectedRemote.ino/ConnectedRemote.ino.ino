@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 
 #include <SPI.h>
 #include <Wire.h>
@@ -37,6 +39,16 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
   B00000000, B00110000
 };
 
+int bluetoothTx = 2;  // TX-O pin of bluetooth mate, Arduino D2
+int bluetoothRx = 3;  // RX-I pin of bluetooth mate, Arduino D3
+
+SoftwareSerial bluetooth(bluetoothRx, bluetoothTx); // RX, TX
+
+int led = 13;
+int buttonPin1 = 7;
+int button1State = 0;
+
+
 #if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
@@ -44,34 +56,22 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
 void setup()   {
   Serial.begin(9600);
 
-  // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
-  // init done
-
-  // Show image buffer on the display hardware.
-  // Since the buffer is intialized with an Adafruit splashscreen
-  // internally, this will display the splashscreen.
   display.display();
-  delay(2000);
-
+  delay(1000);
   display.clearDisplay();
 
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.println("BLE:OK  Batt: 100%");
-  display.println("D: 399Wh C: 100Wh");
-
-  display.setTextSize(2);
-  display.print(" 25 km/h ");
-  display.display();
-  delay(2000);
-  display.clearDisplay();
-
-  // miniature bitmap display
-
-
-  // draw a bitmap icon and 'animate' movement
+  bluetooth.begin(115200);  // The Bluetooth Mate defaults to 115200bps
+  bluetooth.print("$");  // Print three times individually
+  bluetooth.print("$");
+  bluetooth.print("$");  // Enter command mode
+  delay(100);  // Short delay, wait for the Mate to send back CMD
+  bluetooth.println("U,9600,N");  // Temporarily Change the baudrate to 9600, no parity
+  // 115200 can be too fast at times for NewSoftSerial to relay the data reliably
+  bluetooth.begin(9600);  // Start bluetooth serial at 9600
+  
+  pinMode(led, OUTPUT);
+  pinMode(buttonPin1, INPUT);
 
   loop();
 }
@@ -102,16 +102,19 @@ void loop() {
     int charged = 100;
 
     int speed = 0;
+    digitalWrite(led, LOW);
 
+    
     while(true){
-    delay(300);
-     drawTextScreen(batt,ble, drawn, charged, speed);
-    display.display();
-
-    batt--;
-    drawn++;
-    charged++;
-    speed++;
+      delay(300);
+       drawTextScreen(batt,ble, drawn, charged, speed);
+      display.display();
+  
+      batt--;
+      drawn++;
+      charged++;
+      speed++;
+      digitalWrite(led,HIGH);
     }
 
 }
