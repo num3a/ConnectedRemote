@@ -1,6 +1,4 @@
 #include <SoftwareSerial.h>
-
-
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -19,25 +17,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define LOGO16_GLCD_WIDTH  16
 #define SSD1306_LCDHEIGHT 64
 #define SSD1306_LCDWIDTH 128
-
-static const unsigned char PROGMEM logo16_glcd_bmp[] =
-{ B00000000, B11000000,
-  B00000001, B11000000,
-  B00000001, B11000000,
-  B00000011, B11100000,
-  B11110011, B11100000,
-  B11111110, B11111000,
-  B01111110, B11111111,
-  B00110011, B10011111,
-  B00011111, B11111100,
-  B00001101, B01110000,
-  B00011011, B10100000,
-  B00111111, B11100000,
-  B00111111, B11110000,
-  B01111100, B11110000,
-  B01110000, B01110000,
-  B00000000, B00110000
-};
 
 int bluetoothTx = 2;  // TX-O pin of bluetooth mate, Arduino D2
 int bluetoothRx = 3;  // RX-I pin of bluetooth mate, Arduino D3
@@ -61,7 +40,7 @@ void setup()   {
   delay(1000);
   display.clearDisplay();
 
-  bluetooth.begin(115200);  // The Bluetooth Mate defaults to 115200bps
+  //bluetooth.begin(115200);  // The Bluetooth Mate defaults to 115200bps
   bluetooth.print("$");  // Print three times individually
   bluetooth.print("$");
   bluetooth.print("$");  // Enter command mode
@@ -69,7 +48,6 @@ void setup()   {
   bluetooth.println("U,9600,N");  // Temporarily Change the baudrate to 9600, no parity
   // 115200 can be too fast at times for NewSoftSerial to relay the data reliably
   bluetooth.begin(9600);  // Start bluetooth serial at 9600
-  
   pinMode(led, OUTPUT);
   pinMode(buttonPin1, INPUT);
 
@@ -103,6 +81,7 @@ void loop() {
 
     int speed = 0;
     digitalWrite(led, LOW);
+    bluetooth.println("AT+NAME=TEST");
 
     
     while(true){
@@ -115,6 +94,13 @@ void loop() {
       charged++;
       speed++;
       digitalWrite(led,HIGH);
+    }
+
+     if (bluetooth.available()) {
+        Serial.write(bluetooth.read());
+    }
+    if (Serial.available()) {
+        bluetooth.write(Serial.read());
     }
 
 }
